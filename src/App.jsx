@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import CryptoJS from 'crypto-js'
+import LZString from 'lz-string'  // Add this import
 
 function App() {
   const [inputText, setInputText] = useState('')
@@ -55,6 +56,8 @@ function App() {
   };
 
   // Enhanced handleProcess with loading state
+  // Add a new state variable for LZ-String method
+  const [lzStringMethod, setLzStringMethod] = useState('compressToBase64');
   const handleProcess = async () => {
     setIsProcessing(true);
     const startTime = performance.now();
@@ -95,6 +98,10 @@ function App() {
             // New Rabbit algorithm
             result = CryptoJS.Rabbit.encrypt(inputText, key || 'default-key').toString()
             break
+          case 'lzstring':
+            // LZ-String compression
+            result = LZString.compressToBase64(inputText)
+            break
           default:
             result = 'Algorithm not implemented'
         }
@@ -125,6 +132,10 @@ function App() {
           case 'rabbit':
             // New Rabbit algorithm
             result = CryptoJS.Rabbit.decrypt(inputText, key || 'default-key').toString(CryptoJS.enc.Utf8)
+            break
+          case 'lzstring':
+            // LZ-String decompression
+            result = LZString.decompressFromBase64(inputText) || 'Invalid compressed data'
             break
           default:
             result = 'Algorithm not implemented'
@@ -158,7 +169,7 @@ function App() {
 
     setIsProcessing(true);
     const results = {};
-    const algorithms = ['aes', 'des', 'base64', 'xor', 'rc4', 'rabbit'];
+    const algorithms = ['aes', 'des', 'base64', 'xor', 'rc4', 'rabbit', 'lzstring'];
 
     for (const algo of algorithms) {
       if (algo === 'base64' && mode === 'decrypt') continue;
@@ -189,6 +200,9 @@ function App() {
               break;
             case 'rabbit':
               result = CryptoJS.Rabbit.encrypt(inputText, key || 'default-key').toString();
+              break;
+            case 'lzstring':
+              result = LZString.compressToBase64(inputText);
               break;
           }
         } else {
@@ -353,6 +367,7 @@ function App() {
                       <option value="rabbit">Rabbit Stream Cipher</option>
                       <option value="base64">Base64 Encoding</option>
                       <option value="xor">XOR Cipher</option>
+                      <option value="lzstring">LZ-String Compression</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -362,6 +377,39 @@ function App() {
                   </div>
                 </div>
               </div>
+
+              {/* Add the LZ-String method dropdown here */}
+              {algorithm === 'lzstring' && (
+                <div className="space-y-2 mt-4">
+                  <label className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                    LZ-String Method
+                  </label>
+                  <div className="relative">
+                    <select
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white appearance-none pr-10 transition-all"
+                      value={lzStringMethod}
+                      onChange={(e) => setLzStringMethod(e.target.value)}
+                    >
+                      <option value="compressToBase64">Base64 (recommended)</option>
+                      <option value="compressToUTF16">UTF-16</option>
+                      <option value="compressToUint8Array">Uint8Array</option>
+                      <option value="compressToEncodedURIComponent">URL Encoded</option>
+                      <option value="compress">Raw</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {mode === 'encrypt' ? 'Compression' : 'Decompression'} method for LZ-String algorithm
+                  </p>
+                </div>
+              )}
 
               {['aes', 'des', 'xor', 'rc4', 'rabbit'].includes(algorithm) && (
                 <div className="space-y-2">
