@@ -9,8 +9,8 @@ const EncryptionForm = ({
   setMode,
   algorithm,
   setAlgorithm,
-  key: encryptionKey,
-  setKey: setEncryptionKey,
+  encryptionKey,
+  setKey,
   handleProcess,
   handleCopy,
   copied,
@@ -83,7 +83,7 @@ const EncryptionForm = ({
             id="key"
             type={mode === 'encrypt' ? 'text' : 'password'}
             value={encryptionKey}
-            onChange={(e) => setEncryptionKey(e.target.value)}
+            onChange={(e) => setKey(e.target.value)}
             placeholder="Enter your encryption key"
             disabled={isProcessing}
             className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
