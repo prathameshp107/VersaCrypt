@@ -41,37 +41,62 @@ function App() {
     localStorage.setItem('darkMode', newDarkMode);
   }, [darkMode]);
 
+  // Show toast message
+  const showToastMessage = useCallback((message) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  }, []);
+
   // Handle encryption/decryption process
   const handleProcess = useCallback(async () => {
-    if (!inputText) return;
+    if (!inputText) {
+      showToastMessage('Please enter some text to process');
+      return;
+    }
+    
+    if (mode === 'encrypt' && !key) {
+      showToastMessage('Please enter an encryption key');
+      return;
+    }
     
     setIsProcessing(true);
     const startTime = performance.now();
     
     try {
       const result = await processEncryption(inputText, mode, algorithm, key || 'default-key');
-      setOutputText(result);
       
-      // Update history
-      const endTime = performance.now();
-      const processTime = endTime - startTime;
-      setProcessingTime(processTime);
-      setHistory(prev => [
-        {
-          mode,
-          algorithm,
-          timestamp: new Date().toISOString(),
-          processingTime: processTime
-        },
-        ...prev.slice(0, 4)
-      ]);
+      if (result) {
+        setOutputText(result);
+        // Update history
+        const endTime = performance.now();
+        const processTime = endTime - startTime;
+        setProcessingTime(processTime);
+        
+        // Add to history
+        setHistory(prev => [
+          {
+            mode,
+            algorithm,
+            timestamp: new Date().toISOString(),
+            processingTime: processTime
+          },
+          ...prev.slice(0, 4)
+        ]);
+        
+        showToastMessage(`${mode === 'encrypt' ? 'Encryption' : 'Decryption'} successful!`);
+      } else {
+        throw new Error('No result returned from encryption/decryption');
+      }
     } catch (error) {
       console.error('Encryption error:', error);
-      setOutputText(`Error: ${error.message}`);
+      const errorMessage = error.message || 'An error occurred during processing';
+      setOutputText(`Error: ${errorMessage}`);
+      showToastMessage(`Error: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
     }
-  }, [inputText, mode, algorithm, key, processEncryption]);
+  }, [inputText, mode, algorithm, key, processEncryption, showToastMessage]);
 
   // Handle copy to clipboard
   const handleCopy = useCallback(() => {
@@ -85,13 +110,6 @@ function App() {
       setCopied(false);
     }, 2000);
   }, [outputText]);
-
-  // Show toast message
-  const showToastMessage = (message) => {
-    setToastMessage(message);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  };
 
   // Toggle password generator
   const togglePasswordGenerator = () => {
@@ -213,15 +231,15 @@ function App() {
                 setMode={setMode}
                 algorithm={algorithm}
                 setAlgorithm={setAlgorithm}
-                keyValue={key}
+                encryptionKey={key}
                 setKey={setKey}
                 keyStrength={keyStrength}
                 inputText={inputText}
                 setInputText={setInputText}
                 outputText={outputText}
                 isProcessing={isProcessing}
-                onProcess={handleProcess}
-                onCopy={handleCopy}
+                handleProcess={handleProcess}
+                handleCopy={handleCopy}
                 copied={copied}
               />
             </div>

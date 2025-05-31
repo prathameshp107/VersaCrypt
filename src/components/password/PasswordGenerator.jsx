@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { usePasswordGenerator } from '../../hooks/usePasswordGenerator';
 
-const PasswordGenerator = ({ show, onHide, onPasswordSelect }) => {
+const PasswordGenerator = ({ show, onClose, onPasswordSelect }) => {
   const {
     passwordLength,
     setPasswordLength,
@@ -43,9 +43,9 @@ const PasswordGenerator = ({ show, onHide, onPasswordSelect }) => {
   const handleUsePassword = useCallback(() => {
     if (generatedPassword && onPasswordSelect) {
       onPasswordSelect(generatedPassword);
-      onHide?.();
+      onClose?.();
     }
-  }, [generatedPassword, onPasswordSelect, onHide]);
+  }, [generatedPassword, onPasswordSelect, onClose]);
 
   // Handle copy to clipboard
   const handleCopy = useCallback(() => {
@@ -68,12 +68,12 @@ const PasswordGenerator = ({ show, onHide, onPasswordSelect }) => {
 
   // Handle close action (button, icon, or backdrop)
   const handleClose = useCallback(() => {
-    if (onHide) {
-      onHide();
+    if (onClose) {
+      onClose();
     } else {
-      console.warn('onHide prop is not provided or not functioning.');
+      console.warn('onClose prop is not provided or not functioning.');
     }
-  }, [onHide]);
+  }, [onClose]);
 
   // Handle backdrop click to close modal
   const handleBackdropClick = useCallback((e) => {
