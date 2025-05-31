@@ -49,13 +49,13 @@ function App() {
   }, []);
 
   // Handle encryption/decryption process
-  const handleProcess = useCallback(async () => {
+  const handleProcess = useCallback(async (options = {}) => {
     if (!inputText) {
       showToastMessage('Please enter some text to process');
       return;
     }
     
-    if (mode === 'encrypt' && !key) {
+    if (mode === 'encrypt' && !key && algorithm !== 'lzstring') {
       showToastMessage('Please enter an encryption key');
       return;
     }
@@ -64,10 +64,47 @@ function App() {
     const startTime = performance.now();
     
     try {
-      const result = await processEncryption(inputText, mode, algorithm, key || 'default-key');
+      let processedText = inputText;
+      let lzMethod = 'compress';
+      
+      // Handle LZ-String specific options
+      if (algorithm === 'lzstring') {
+        lzMethod = options.method || 'compress';
+        
+        // If in decrypt mode and JSON parsing is enabled, try to parse the input
+        if (mode === 'decrypt' && options.useJson) {
+          try {
+            const parsed = JSON.parse(processedText);
+            processedText = parsed;
+          } catch (e) {
+            console.warn('Failed to parse JSON input, using raw text');
+          }
+        }
+      }
+      
+      // Process the encryption/decryption
+      const result = await processEncryption(
+        processedText, 
+        mode, 
+        algorithm, 
+        key || 'default-key',
+        algorithm === 'lzstring' ? { lzMethod } : {}
+      );
       
       if (result) {
-        setOutputText(result);
+        // If in encrypt mode and JSON mode is enabled, try to parse and format the output
+        let displayResult = result;
+        if (mode === 'encrypt' && algorithm === 'lzstring' && options.useJson) {
+          try {
+            displayResult = JSON.parse(result);
+          } catch (e) {
+            // If parsing fails, use the raw result
+            console.warn('Failed to parse result as JSON, using raw output');
+          }
+        }
+        
+        setOutputText(displayResult);
+        
         // Update history
         const endTime = performance.now();
         const processTime = endTime - startTime;
@@ -77,7 +114,7 @@ function App() {
         setHistory(prev => [
           {
             mode,
-            algorithm,
+            algorithm: algorithm === 'lzstring' ? `LZ-String (${lzMethod})` : algorithm,
             timestamp: new Date().toISOString(),
             processingTime: processTime
           },

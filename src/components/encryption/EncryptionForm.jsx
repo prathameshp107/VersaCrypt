@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaCopy, FaLock, FaKey, FaShieldAlt, FaArrowRight, FaLockOpen } from 'react-icons/fa';
+import { useState } from 'react';
 
 const EncryptionForm = ({
   inputText,
@@ -17,6 +18,8 @@ const EncryptionForm = ({
   isProcessing,
   keyStrength
 }) => {
+  const [lzMethod, setLzMethod] = useState('compress');
+  const [useJson, setUseJson] = useState(false);
   const algorithms = [
     { value: 'aes', label: 'AES-256', icon: <FaShieldAlt className="mr-2" /> },
     { value: 'des', label: 'DES', icon: <FaShieldAlt className="mr-2" /> },
@@ -27,10 +30,43 @@ const EncryptionForm = ({
     { value: 'lzstring', label: 'LZ-String', icon: <FaShieldAlt className="mr-2" /> },
   ];
 
+  const lzStringMethods = [
+    { 
+      value: 'compress', 
+      label: mode === 'encrypt' ? 'Compress' : 'Decompress' 
+    },
+    { 
+      value: 'compressToUTF16', 
+      label: mode === 'encrypt' ? 'Compress to UTF16' : 'Decompress from UTF16' 
+    },
+    { 
+      value: 'compressToBase64', 
+      label: mode === 'encrypt' ? 'Compress to Base64' : 'Decompress from Base64' 
+    },
+    { 
+      value: 'compressToEncodedURIComponent', 
+      label: mode === 'encrypt' ? 'Compress to URI' : 'Decompress from URI' 
+    },
+    { 
+      value: 'compressToUint8Array', 
+      label: mode === 'encrypt' ? 'Compress to Uint8Array' : 'Decompress from Uint8Array' 
+    },
+  ];
+
   const getKeyStrengthColor = (strength) => {
     if (strength < 30) return 'bg-red-500';
     if (strength < 70) return 'bg-yellow-500';
     return 'bg-green-500';
+  };
+
+  // Toggle between encrypt and decrypt mode
+  const toggleMode = () => {
+    setMode(prevMode => {
+      const newMode = prevMode === 'encrypt' ? 'decrypt' : 'encrypt';
+      // Reset LZ method when switching modes to avoid confusion
+      setLzMethod('compress');
+      return newMode;
+    });
   };
 
   return (
@@ -62,6 +98,62 @@ const EncryptionForm = ({
           </div>
         </div>
       </div>
+
+      {/* LZ-String Method Selection */}
+      {algorithm === 'lzstring' && (
+        <div className="space-y-2">
+          <label htmlFor="lzMethod" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            LZ-String Method
+          </label>
+          <div className="relative">
+            <select
+              id="lzMethod"
+              value={lzMethod || 'compress'}
+              onChange={(e) => setLzMethod(e.target.value)}
+              disabled={isProcessing}
+              className="block w-full pl-3 pr-10 py-2.5 text-base border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+            >
+              {lzStringMethods.map((method) => (
+                <option key={method.value} value={method.value}>
+                  {method.label}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* JSON Toggle */}
+          <div className="flex items-center mt-2">
+            <button
+              type="button"
+              onClick={() => setUseJson(!useJson)}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${useJson ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'}`}
+              role="switch"
+              aria-checked={useJson}
+            >
+              <span className="sr-only">Use JSON {useJson ? 'parse' : 'stringify'}</span>
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  useJson ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+            <span className="ml-3 text-sm">
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                {useJson ? 'JSON Mode' : 'Text Mode'}
+              </span>
+              <span className="text-gray-500 dark:text-gray-400">
+                {' '}({useJson ? 'Auto ' + (mode === 'encrypt' ? 'stringify' : 'parse') : 'Raw text'})
+              </span>
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Encryption Key */}
       <div className="space-y-2">
@@ -126,7 +218,16 @@ const EncryptionForm = ({
 
       {/* Process Button */}
       <button
-        onClick={handleProcess}
+        onClick={() => {
+          if (algorithm === 'lzstring') {
+            handleProcess({
+              method: lzMethod,
+              useJson: useJson
+            });
+          } else {
+            handleProcess();
+          }
+        }}
         disabled={isProcessing || !inputText}
         className={`w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-sm transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed ${isProcessing ? 'cursor-wait' : ''}`}
       >
