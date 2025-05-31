@@ -1,809 +1,350 @@
-import { useState, useEffect } from 'react'
-import './App.css'
-import CryptoJS from 'crypto-js'
-import LZString from 'lz-string'  // Add this import
+import { useState, useEffect, useCallback } from 'react';
+import { FaMoon, FaSun, FaKey, FaHistory } from 'react-icons/fa';
+
+// Components
+import EncryptionForm from './components/encryption/EncryptionForm';
+import PasswordGenerator from './components/password/PasswordGenerator';
+
+// Hooks
+import useEncryption from './hooks/useEncryption';
 
 function App() {
-  const [inputText, setInputText] = useState('')
-  const [outputText, setOutputText] = useState('')
-  const [mode, setMode] = useState('encrypt')
-  const [algorithm, setAlgorithm] = useState('aes')
-  const [key, setKey] = useState('')
-  const [copied, setCopied] = useState(false)
-
-  // Reset output when input, mode, algorithm, or key changes
-  useEffect(() => {
-    setOutputText('')
-    setCopied(false)
-  }, [inputText, mode, algorithm, key])
-
-  // Existing state variables
+  // State
+  const [inputText, setInputText] = useState('');
+  const [outputText, setOutputText] = useState('');
+  const [mode, setMode] = useState('encrypt');
+  const [algorithm, setAlgorithm] = useState('aes');
+  const [key, setKey] = useState('');
+  const [copied, setCopied] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [showPasswordGenerator, setShowPasswordGenerator] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [processingTime, setProcessingTime] = useState(0);
-  const [file, setFile] = useState(null);
-  const [keyStrength, setKeyStrength] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [history, setHistory] = useState([]);
 
-  // New state variables for additional features
-  const [showComparison, setShowComparison] = useState(false);
-  const [comparisonResults, setComparisonResults] = useState({});
-  const [showPasswordGenerator, setShowPasswordGenerator] = useState(false);
-  const [passwordLength, setPasswordLength] = useState(16);
-  const [includeSymbols, setIncludeSymbols] = useState(true);
-  const [includeNumbers, setIncludeNumbers] = useState(true);
-  const [includeLowercase, setIncludeLowercase] = useState(true);
-  const [includeUppercase, setIncludeUppercase] = useState(true);
-  const [generatedPassword, setGeneratedPassword] = useState('');
+  // Custom hooks
+  const {
+    processEncryption,
+    calculateKeyStrength,
+  } = useEncryption();
 
-  // Add animated gradient background
-  const gradientAnimation = `
-    @keyframes gradient {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-  `;
+  // Calculate key strength
+  const keyStrength = calculateKeyStrength(key);
 
-  // Add key strength calculator
-  const calculateKeyStrength = (key) => {
-    const lengthStrength = Math.min(key.length / 12, 1);
-    const hasLowercase = /[a-z]/.test(key) ? 0.1 : 0;
-    const hasUppercase = /[A-Z]/.test(key) ? 0.1 : 0;
-    const hasNumbers = /[0-9]/.test(key) ? 0.1 : 0;
-    const hasSymbols = /[^a-zA-Z0-9]/.test(key) ? 0.2 : 0;
-    return Math.min((lengthStrength + hasLowercase + hasUppercase + hasNumbers + hasSymbols) * 100, 100);
-  };
+  // Toggle dark mode
+  const toggleDarkMode = useCallback(() => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    document.documentElement.classList.toggle('dark', newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode);
+  }, [darkMode]);
 
-  // Enhanced handleProcess with loading state
-  // Add a new state variable for LZ-String method
-  const [lzStringMethod, setLzStringMethod] = useState('compressToBase64');
-  const handleProcess = async () => {
+  // Handle encryption/decryption process
+  const handleProcess = useCallback(async () => {
+    if (!inputText) return;
+    
     setIsProcessing(true);
     const startTime = performance.now();
-
-    if (!inputText && !file) {
-      setIsProcessing(false);
-      return;
-    }
-
+    
     try {
-      let result = ''
-
-      if (mode === 'encrypt') {
-        switch (algorithm) {
-          case 'aes':
-            result = CryptoJS.AES.encrypt(inputText, key || 'default-key').toString()
-            break
-          case 'des':
-            result = CryptoJS.DES.encrypt(inputText, key || 'default-key').toString()
-            break
-          case 'base64':
-            result = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(inputText))
-            break
-          case 'xor':
-            // Simple XOR implementation
-            const xorKey = key || 'default-key'
-            result = [...inputText].map((char, i) => {
-              return String.fromCharCode(char.charCodeAt(0) ^ xorKey.charCodeAt(i % xorKey.length))
-            }).join('')
-            // Convert to Base64 for readability
-            result = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(result))
-            break
-          case 'rc4':
-            // New RC4 algorithm
-            result = CryptoJS.RC4.encrypt(inputText, key || 'default-key').toString()
-            break
-          case 'rabbit':
-            // New Rabbit algorithm
-            result = CryptoJS.Rabbit.encrypt(inputText, key || 'default-key').toString()
-            break
-          case 'lzstring':
-            // LZ-String compression
-            result = LZString.compressToBase64(inputText)
-            break
-          default:
-            result = 'Algorithm not implemented'
-        }
-      } else { // decrypt
-        switch (algorithm) {
-          case 'aes':
-            result = CryptoJS.AES.decrypt(inputText, key || 'default-key').toString(CryptoJS.enc.Utf8)
-            break
-          case 'des':
-            result = CryptoJS.DES.decrypt(inputText, key || 'default-key').toString(CryptoJS.enc.Utf8)
-            break
-          case 'base64':
-            result = CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse(inputText))
-            break
-          case 'xor':
-            // Decode Base64 first
-            let decoded = CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse(inputText))
-            // XOR decrypt
-            const xorKey = key || 'default-key'
-            result = [...decoded].map((char, i) => {
-              return String.fromCharCode(char.charCodeAt(0) ^ xorKey.charCodeAt(i % xorKey.length))
-            }).join('')
-            break
-          case 'rc4':
-            // New RC4 algorithm
-            result = CryptoJS.RC4.decrypt(inputText, key || 'default-key').toString(CryptoJS.enc.Utf8)
-            break
-          case 'rabbit':
-            // New Rabbit algorithm
-            result = CryptoJS.Rabbit.decrypt(inputText, key || 'default-key').toString(CryptoJS.enc.Utf8)
-            break
-          case 'lzstring':
-            // LZ-String decompression
-            result = LZString.decompressFromBase64(inputText) || 'Invalid compressed data'
-            break
-          default:
-            result = 'Algorithm not implemented'
-        }
-      }
-
-      setOutputText(result)
-    } catch (error) {
-      setOutputText(`Error: ${error.message}`)
-    } finally {
-      const endTime = performance.now();
-      setProcessingTime(endTime - startTime);
-      setIsProcessing(false);
-
+      const result = await processEncryption(inputText, mode, algorithm, key || 'default-key');
+      setOutputText(result);
+      
       // Update history
+      const endTime = performance.now();
+      const processTime = endTime - startTime;
+      setProcessingTime(processTime);
       setHistory(prev => [
         {
           mode,
           algorithm,
           timestamp: new Date().toISOString(),
-          processingTime: endTime - startTime
+          processingTime: processTime
         },
         ...prev.slice(0, 4)
       ]);
+    } catch (error) {
+      console.error('Encryption error:', error);
+      setOutputText(`Error: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
     }
-  };
+  }, [inputText, mode, algorithm, key, processEncryption]);
 
-  // New function to compare algorithm performance
-  const compareAlgorithms = async () => {
-    if (!inputText) return;
-
-    setIsProcessing(true);
-    const results = {};
-    const algorithms = ['aes', 'des', 'base64', 'xor', 'rc4', 'rabbit', 'lzstring'];
-
-    for (const algo of algorithms) {
-      if (algo === 'base64' && mode === 'decrypt') continue;
-
-      const start = performance.now();
-      try {
-        let result;
-        if (mode === 'encrypt') {
-          switch (algo) {
-            case 'aes':
-              result = CryptoJS.AES.encrypt(inputText, key || 'default-key').toString();
-              break;
-            case 'des':
-              result = CryptoJS.DES.encrypt(inputText, key || 'default-key').toString();
-              break;
-            case 'base64':
-              result = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(inputText));
-              break;
-            case 'xor':
-              const xorKey = key || 'default-key';
-              result = [...inputText].map((char, i) => {
-                return String.fromCharCode(char.charCodeAt(0) ^ xorKey.charCodeAt(i % xorKey.length));
-              }).join('');
-              result = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(result));
-              break;
-            case 'rc4':
-              result = CryptoJS.RC4.encrypt(inputText, key || 'default-key').toString();
-              break;
-            case 'rabbit':
-              result = CryptoJS.Rabbit.encrypt(inputText, key || 'default-key').toString();
-              break;
-            case 'lzstring':
-              result = LZString.compressToBase64(inputText);
-              break;
-          }
-        } else {
-          // Decrypt logic for comparison
-          // (Similar to the decrypt logic in handleProcess)
-        }
-        const end = performance.now();
-        results[algo] = {
-          time: end - start,
-          success: true,
-          outputLength: result ? result.length : 0
-        };
-      } catch (error) {
-        results[algo] = {
-          time: 0,
-          success: false,
-          error: error.message
-        };
-      }
-    }
-
-    setComparisonResults(results);
-    setShowComparison(true);
-    setIsProcessing(false);
-  };
-
-  // New function to generate secure passwords
-  const generatePassword = () => {
-    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
-    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const numbers = '0123456789';
-    const symbols = '!@#$%^&*()_+~`|}{[]\\:;?><,./-=';
-
-    let chars = '';
-    if (includeLowercase) chars += lowercase;
-    if (includeUppercase) chars += uppercase;
-    if (includeNumbers) chars += numbers;
-    if (includeSymbols) chars += symbols;
-
-    if (chars === '') chars = lowercase + numbers; // Fallback
-
-    let password = '';
-    for (let i = 0; i < passwordLength; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-
-    setGeneratedPassword(password);
-  };
-
-  // Function to use generated password as key
-  const useGeneratedPassword = () => {
-    setKey(generatedPassword);
-    setKeyStrength(calculateKeyStrength(generatedPassword));
-    setShowPasswordGenerator(false);
-  };
-
-  // Function to export encrypted/decrypted data
-  const exportData = () => {
+  // Handle copy to clipboard
+  const handleCopy = useCallback(() => {
     if (!outputText) return;
+    
+    navigator.clipboard.writeText(outputText);
+    setCopied(true);
+    showToastMessage('Copied to clipboard!');
+    
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  }, [outputText]);
 
-    const blob = new Blob([outputText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${mode === 'encrypt' ? 'encrypted' : 'decrypted'}_data.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // Show toast message
+  const showToastMessage = (message) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
   };
 
-  // Add file handler
-  const handleFileRead = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => setInputText(e.target.result);
-      reader.readAsText(file);
-      setFile(file);
+  // Toggle password generator
+  const togglePasswordGenerator = () => {
+    setShowPasswordGenerator(!showPasswordGenerator);
+  };
+
+  // Handle password selection from generator
+  const handlePasswordSelect = (password) => {
+    setKey(password);
+    showToastMessage('Password copied to key field!');
+  };
+
+  // Set up dark mode on initial load
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setDarkMode(savedDarkMode);
+    if (savedDarkMode) {
+      document.documentElement.classList.add('dark');
     }
-  };
-
-  // Handle copy function
-  const handleCopy = () => {
-    navigator.clipboard.writeText(outputText)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+  }, []);
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 font-sans">
-        <div className="w-full max-w-2xl bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden border border-white/20 transition-all duration-300 hover:shadow-blue-500/10">
-          <div className="px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 3.75c-4.55 0-8.25 3.69-8.25 8.25 0 1.92.67 3.68 1.78 5.08L3 20.09l1.41 1.41 3.8-3.8A8.46 8.46 0 0012 20.25c4.55 0 8.25-3.69 8.25-8.25S16.55 3.75 12 3.75zm0 15c-3.73 0-6.75-3.02-6.75-6.75S8.27 5.25 12 5.25s6.75 3.02 6.75 6.75-3.02 6.75-6.75 6.75zM12 8.25c-.41 0-.75.34-.75.75v3c0 .41.34.75.75.75h3c.41 0 .75-.34.75-.75s-.34-.75-.75-.75h-2.25V9c0-.41-.34-.75-.75-.75z" />
-              </svg>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">Secure Crypt</span>
-            </h1>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-blue-100 bg-white/10 px-3 py-1 rounded-full">
-                {algorithm.toUpperCase()}
-              </span>
+    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white transition-colors duration-200">
+      {/* Navigation */}
+      {/* Enhanced Navigation Bar */}
+      <nav className="fixed w-full z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 flex items-center">
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                  VersaCrypt
+                </span>
+                <span className="ml-2 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-800">
+                  v1.0
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
               <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
+                onClick={togglePasswordGenerator}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200
+                  bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white
+                  shadow-sm hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                  dark:from-blue-600 dark:to-indigo-700 dark:hover:from-blue-700 dark:hover:to-indigo-800"
               >
-                {darkMode ? '🌞' : '🌙'}
+                <FaKey className="mr-2" />
+                Generate Password
               </button>
-            </div>
-          </div>
-
-          <div className="p-8 space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                    </svg>
-                    Operation Mode
-                  </label>
-                  <div className="flex gap-3">
-                    <button
-                      className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${mode === 'encrypt'
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg ring-2 ring-blue-400 ring-opacity-50'
-                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:shadow'} 
-                    duration-200`}
-                      onClick={() => setMode('encrypt')}
-                    >
-                      🔒 Encrypt
-                    </button>
-                    <button
-                      className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${mode === 'decrypt'
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg ring-2 ring-blue-400 ring-opacity-50'
-                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:shadow'} 
-                    duration-200`}
-                      onClick={() => setMode('decrypt')}
-                    >
-                      🔓 Decrypt
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Cipher Algorithm
-                  </label>
-                  <div className="relative">
-                    <select
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white appearance-none pr-10 transition-all"
-                      value={algorithm}
-                      onChange={(e) => setAlgorithm(e.target.value)}
-                    >
-                      <option value="aes">AES (Advanced Encryption Standard)</option>
-                      <option value="des">DES (Data Encryption Standard)</option>
-                      <option value="rc4">RC4 (Rivest Cipher 4)</option>
-                      <option value="rabbit">Rabbit Stream Cipher</option>
-                      <option value="base64">Base64 Encoding</option>
-                      <option value="xor">XOR Cipher</option>
-                      <option value="lzstring">LZ-String Compression</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Add the LZ-String method dropdown here */}
-              {algorithm === 'lzstring' && (
-                <div className="space-y-2 mt-4">
-                  <label className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                    </svg>
-                    LZ-String Method
-                  </label>
-                  <div className="relative">
-                    <select
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white appearance-none pr-10 transition-all"
-                      value={lzStringMethod}
-                      onChange={(e) => setLzStringMethod(e.target.value)}
-                    >
-                      <option value="compressToBase64">Base64 (recommended)</option>
-                      <option value="compressToUTF16">UTF-16</option>
-                      <option value="compressToUint8Array">Uint8Array</option>
-                      <option value="compressToEncodedURIComponent">URL Encoded</option>
-                      <option value="compress">Raw</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {mode === 'encrypt' ? 'Compression' : 'Decompression'} method for LZ-String algorithm
-                  </p>
-                </div>
-              )}
-
-              {['aes', 'des', 'xor', 'rc4', 'rabbit'].includes(algorithm) && (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                      </svg>
-                      Encryption Key
-                    </label>
-                    <button
-                      onClick={() => setShowPasswordGenerator(!showPasswordGenerator)}
-                      className="text-xs text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                      </svg>
-                      Generate Key
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="password"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white transition-all"
-                      placeholder="Enter secret passphrase"
-                      value={key}
-                      onChange={(e) => {
-                        setKey(e.target.value);
-                        setKeyStrength(calculateKeyStrength(e.target.value));
-                      }}
-                    />
-                    {key && (
-                      <div className="mt-2 space-y-1">
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>Key Strength</span>
-                          <span>{Math.round(keyStrength)}%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full transition-all duration-500 ${keyStrength < 30 ? 'bg-red-500' : keyStrength < 70 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                            style={{ width: `${keyStrength}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Password Generator Modal */}
-            {showPasswordGenerator && (
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow-inner">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-medium text-gray-700">Password Generator</h3>
-                  <button
-                    onClick={() => setShowPasswordGenerator(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm text-gray-600 block mb-1">Length: {passwordLength}</label>
-                    <input
-                      type="range"
-                      min="8"
-                      max="32"
-                      value={passwordLength}
-                      onChange={(e) => setPasswordLength(parseInt(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={includeUppercase}
-                        onChange={() => setIncludeUppercase(!includeUppercase)}
-                        className="rounded text-blue-500 focus:ring-blue-400"
-                      />
-                      <span className="text-sm text-gray-600">Uppercase (A-Z)</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={includeLowercase}
-                        onChange={() => setIncludeLowercase(!includeLowercase)}
-                        className="rounded text-blue-500 focus:ring-blue-400"
-                      />
-                      <span className="text-sm text-gray-600">Lowercase (a-z)</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={includeNumbers}
-                        onChange={() => setIncludeNumbers(!includeNumbers)}
-                        className="rounded text-blue-500 focus:ring-blue-400"
-                      />
-                      <span className="text-sm text-gray-600">Numbers (0-9)</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={includeSymbols}
-                        onChange={() => setIncludeSymbols(!includeSymbols)}
-                        className="rounded text-blue-500 focus:ring-blue-400"
-                      />
-                      <span className="text-sm text-gray-600">Symbols (!@#$)</span>
-                    </label>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={generatePassword}
-                      className="px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors flex-1"
-                    >
-                      Generate
-                    </button>
-                    {generatedPassword && (
-                      <button
-                        onClick={useGeneratedPassword}
-                        className="px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors flex-1"
-                      >
-                        Use This Password
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      value={generatedPassword} 
-                      readOnly 
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white font-mono text-sm"
-                    />
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(generatedPassword);
-                        alert('Password copied to clipboard!');
-                      }}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z" />
-                        <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" />
-                      </svg>
-                    </button>
-                  </div>
-                  
-                  
-                  <div className="flex justify-between mt-4">
-                    <button
-                      onClick={generatePassword}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                      Generate Password
-                    </button>
-                    <button
-                      onClick={useGeneratedPassword}
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                      disabled={!generatedPassword}
-                    >
-                      Use as Key
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                </svg>
-                {mode === 'encrypt' ? 'Text to Encrypt' : 'Text to Decrypt'}
-              </label>
-              <div className="relative">
-                <textarea
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 min-h-[120px] transition-all"
-                  placeholder={mode === 'encrypt' ? 'Enter text to encrypt...' : 'Enter text to decrypt...'}
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                />
-                <div className="absolute top-2 right-2 flex space-x-2">
-                  <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 p-2 rounded-lg transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8 4a3 3 0 00-3 3v4a3 3 0 006 0V7a1 1 0 112 0v4a5 5 0 01-10 0V7a5 5 0 0110 0v1.5a1.5 1.5 0 01-3 0V7a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <input type="file" className="hidden" onChange={handleFileRead} accept=".txt" />
-                  </label>
-                  <button
-                    onClick={() => setInputText('')}
-                    className="bg-gray-100 hover:bg-gray-200 p-2 rounded-lg transition-colors"
-                    title="Clear input"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
               <button
-                onClick={handleProcess}
-                disabled={!inputText || isProcessing}
-                className={`px-6 py-3 rounded-xl font-semibold text-white shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${!inputText || isProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105'}`}
+                onClick={toggleDarkMode}
+                className="p-2 rounded-lg transition-all duration-200
+                  text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800/50
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
+                aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
               >
-                {isProcessing ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </>
+                {darkMode ? (
+                  <FaSun size={20} className="text-yellow-400" />
                 ) : (
-                  <>
-                    {mode === 'encrypt' ? '🔒 Encrypt Data' : '🔓 Decrypt Data'}
-                  </>
+                  <FaMoon size={20} />
                 )}
               </button>
-              <button
-                onClick={compareAlgorithms}
-                disabled={!inputText || isProcessing}
-                className="px-6 py-3 rounded-xl font-semibold text-indigo-600 border border-indigo-200 bg-white hover:bg-indigo-50 shadow-sm transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Compare Algorithms
-              </button>
             </div>
+          </div>
+        </div>
+      </nav>
 
-            {outputText && (
-              <div className="mt-8 space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                    </svg>
-                    {mode === 'encrypt' ? 'Encrypted Result' : 'Decrypted Result'}
-                  </label>
-                  <div className="text-xs text-gray-500">
-                    Processed in {processingTime.toFixed(2)}ms
-                  </div>
-                </div>
-                <div className="relative">
-                  <textarea
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 min-h-[120px] bg-gray-50 font-mono text-sm transition-all"
-                    value={outputText}
-                    readOnly
-                  />
-                  <div className="absolute top-2 right-2 flex space-x-2">
-                    <button
-                      onClick={handleCopy}
-                      className={`${copied ? 'bg-green-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-500'} p-2 rounded-lg transition-colors flex items-center gap-1`}
-                    >
-                      {copied ? (
-                        <>
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z" />
-                            <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" />
-                          </svg>
-                          Copy
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={exportData}
-                      className="bg-gray-100 hover:bg-gray-200 p-2 rounded-lg transition-colors text-gray-500 flex items-center gap-1"
-                      title="Export as file"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                      Export
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Algorithm Comparison Results */}
-            {showComparison && (
-              <div className="mt-8 bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <h3 className="font-medium text-gray-700 mb-3">Algorithm Performance Comparison</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Algorithm</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time (ms)</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Output Size</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {Object.entries(comparisonResults).map(([algo, result]) => (
-                        <tr key={algo}>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{algo.toUpperCase()}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{result.time.toFixed(2)}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                            {result.success ? `${result.outputLength} chars` : 'N/A'}
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm">
-                            {result.success ? (
-                              <span className="text-green-600">Success</span>
-                            ) : (
-                              <span className="text-red-600" title={result.error}>Failed</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-3 flex justify-end">
+      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 transition-all duration-300">
+        <div className="max-w-5xl mx-auto space-y-8">
+          {/* Encryption/Decryption Card */}
+          <div className="bg-white dark:bg-gray-800/50 rounded-xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5">
+            <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700/50 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-900/30">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2 sm:mb-0">
+                  Secure {mode === 'encrypt' ? 'Encryption' : 'Decryption'}
+                </h2>
+                <div className="inline-flex rounded-lg p-1 bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
                   <button
-                    onClick={() => setShowComparison(false)}
-                    className="text-sm text-gray-500 hover:text-gray-700"
+                    onClick={() => setMode('encrypt')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                      mode === 'encrypt'
+                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                    }`}
                   >
-                    Close
+                    <span className={`flex items-center ${mode === 'encrypt' ? 'font-semibold' : ''}`}>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={mode === 'encrypt' ? 2.5 : 2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Encrypt
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setMode('decrypt')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                      mode === 'decrypt'
+                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                    }`}
+                  >
+                    <span className={`flex items-center ${mode === 'decrypt' ? 'font-semibold' : ''}`}>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={mode === 'decrypt' ? 2.5 : 2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                      </svg>
+                      Decrypt
+                    </span>
                   </button>
                 </div>
               </div>
-            )}
-
-            {/* History Section */}
-            {history.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                  </svg>
-                  Recent Operations
-                </h3>
-                <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operation</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Algorithm</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {history.map((entry, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
-                              {new Date(entry.timestamp).toLocaleTimeString()}
-                            </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
-                              {entry.mode === 'encrypt' ? '🔒 Encrypt' : '🔓 Decrypt'}
-                            </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
-                              {entry.algorithm.toUpperCase()}
-                            </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500">
-                              {entry.processingTime.toFixed(2)}ms
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                {mode === 'encrypt' 
+                  ? 'Securely encrypt your sensitive information with military-grade encryption.'
+                  : 'Decrypt your encrypted data using the same key that was used for encryption.'}
+              </p>
+            </div>
+            <div className="p-6">
+              <EncryptionForm
+                mode={mode}
+                setMode={setMode}
+                algorithm={algorithm}
+                setAlgorithm={setAlgorithm}
+                keyValue={key}
+                setKey={setKey}
+                keyStrength={keyStrength}
+                inputText={inputText}
+                setInputText={setInputText}
+                outputText={outputText}
+                isProcessing={isProcessing}
+                onProcess={handleProcess}
+                onCopy={handleCopy}
+                copied={copied}
+              />
+            </div>
+            {processingTime > 0 && (
+              <div className="px-6 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+                Processed in {processingTime.toFixed(2)}ms
               </div>
             )}
           </div>
+
+          {/* History Section */}
+          {history.length > 0 && (
+            <div className="bg-white dark:bg-gray-800/50 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700/50 transition-all duration-300 hover:shadow-xl">
+              <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700/50 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-900/30">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
+                  <FaHistory className="mr-3 text-blue-500" />
+                  Recent Activity
+                  <span className="ml-2 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full">
+                    {history.length} {history.length === 1 ? 'entry' : 'entries'}
+                  </span>
+                </h2>
+              </div>
+              <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                {history.map((item, index) => {
+                  const isEncrypt = item.mode === 'encrypt';
+                  return (
+                  <div key={index} className="group p-5 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2.5 rounded-lg ${
+                          isEncrypt 
+                            ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' 
+                            : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                        }`}>
+                          {isEncrypt ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900 dark:text-white">
+                            {isEncrypt ? 'Text Encrypted' : 'Text Decrypted'}
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {item.algorithm.toUpperCase()} • {new Date(item.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 sm:pl-4">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                          isEncrypt 
+                            ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
+                            : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                        }`}>
+                          {item.processingTime.toFixed(0)} ms
+                        </span>
+                        <button className="p-1.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center text-xs text-gray-500 dark:text-gray-400">
+                      <span className="inline-flex items-center">
+                        <svg className="w-3.5 h-3.5 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {new Date(item.timestamp).toLocaleTimeString()}
+                      </span>
+                      <span className="mx-2">•</span>
+                      <span className="inline-flex items-center">
+                        <svg className="w-3.5 h-3.5 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {isEncrypt ? 'Encryption' : 'Decryption'} completed
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-      <style jsx>{`
-        ${gradientAnimation}
-        .bg-gradient-to-br {
-          background-size: 200% 200%;
-          animation: gradient 15s ease infinite;
-        }
-      `}</style>
-    </>
-  )
+      </main>
+
+      {/* Password Generator Modal */}
+      <PasswordGenerator
+        show={showPasswordGenerator}
+        onClose={togglePasswordGenerator}
+        onSelect={handlePasswordSelect}
+      />
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <div className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center justify-between min-w-64">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>{toastMessage}</span>
+            </div>
+            <button
+              onClick={() => setShowToast(false)}
+              className="ml-4 text-white hover:text-gray-200 focus:outline-none"
+              aria-label="Close notification"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
