@@ -8,7 +8,10 @@ import {
   FaLockOpen, 
   FaExchangeAlt,
   FaBars,
-  FaTimes
+  FaTimes,
+  FaGithub,
+  FaTwitter,
+  FaLinkedin,
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -198,37 +201,53 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-      <div className="container mx-auto px-4 py-8">
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100' : 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900'}`}>
+      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
         {/* Header */}
-        <header className="flex justify-between items-center mb-8">
-          <div className="flex items-center space-x-4">
+        <header className="flex justify-between items-center mb-8 sm:mb-12">
+          <div className="flex items-center space-x-3">
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="lg:hidden p-2 rounded-xl hover:bg-opacity-20 hover:bg-gray-700 dark:hover:bg-white dark:hover:bg-opacity-10 transition-all duration-300"
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <FaTimes /> : <FaBars />}
+              {mobileMenuOpen ? (
+                <FaTimes className="w-6 h-6" />
+              ) : (
+                <FaBars className="w-6 h-6" />
+              )}
             </button>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+            <motion.h1 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"
+            >
               SecureCrypt
-            </h1>
+            </motion.h1>
           </div>
-          <div className="flex items-center space-x-4">
-            <button
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={toggleDarkMode}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-2.5 rounded-xl backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-700/70 shadow-sm hover:shadow-md transition-all duration-300"
               aria-label="Toggle dark mode"
             >
-              {darkMode ? <FaSun className="text-yellow-400" /> : <FaMoon />}
-            </button>
-            <button
+              {darkMode ? (
+                <FaSun className="w-5 h-5 text-yellow-400" />
+              ) : (
+                <FaMoon className="w-5 h-5 text-gray-700" />
+              )}
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setShowPasswordGenerator(true)}
-              className="hidden md:flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="hidden md:flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-300"
             >
-              <FaKey />
-              <span>Password Generator</span>
-            </button>
+              <FaKey className="w-4 h-4" />
+              <span className="font-medium">Password Generator</span>
+            </motion.button>
           </div>
         </header>
 
@@ -239,75 +258,105 @@ function App() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden overflow-hidden mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg"
+              className="lg:hidden overflow-hidden mb-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50"
             >
               <div className="p-4 space-y-4">
-                <button
-                  onClick={() => {
-                    setShowPasswordGenerator(true);
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  <FaKey />
-                  <span>Password Generator</span>
-                </button>
-                <div className="flex space-x-2">
-                  <button
+                <div className="grid grid-cols-2 gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setMode('encrypt');
                       setActiveTab('encrypt');
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex-1 py-2 px-4 rounded-lg transition-colors ${activeTab === 'encrypt' ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
+                    className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl transition-all ${
+                      activeTab === 'encrypt'
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                        : 'bg-white dark:bg-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                    }`}
                   >
-                    <FaLockOpen className="inline mr-2" />
-                    Encrypt
-                  </button>
-                  <button
+                    <FaLockOpen className="mr-2" />
+                    <span className="font-medium">Encrypt</span>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setMode('decrypt');
                       setActiveTab('decrypt');
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex-1 py-2 px-4 rounded-lg transition-colors ${activeTab === 'decrypt' ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
+                    className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl transition-all ${
+                      activeTab === 'decrypt'
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                        : 'bg-white dark:bg-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                    }`}
                   >
-                    <FaLock className="inline mr-2" />
-                    Decrypt
-                  </button>
+                    <FaLock className="mr-2" />
+                    <span className="font-medium">Decrypt</span>
+                  </motion.button>
                 </div>
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => {
+                    setShowPasswordGenerator(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  <FaKey className="w-4 h-4" />
+                  <span className="font-medium">Password Generator</span>
+                </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Main Content */}
-        <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <main className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Encryption Form */}
           <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50 transition-all hover:shadow-2xl hover:-translate-y-0.5"
+            >
               {/* Tab Navigation */}
-              <div className="flex border-b border-gray-200 dark:border-gray-700">
-                <button
+              <div className="flex p-1.5 m-4 bg-gray-100 dark:bg-gray-700/50 rounded-xl">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setMode('encrypt');
                     setActiveTab('encrypt');
                   }}
-                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${activeTab === 'encrypt' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                  className={`flex-1 py-3 px-6 text-center font-medium transition-all rounded-xl ${
+                    activeTab === 'encrypt'
+                      ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-white shadow-md'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  }`}
                 >
                   <FaLockOpen className="inline mr-2" />
-                  Encrypt
-                </button>
-                <button
+                  <span className="font-medium">Encrypt</span>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setMode('decrypt');
                     setActiveTab('decrypt');
                   }}
-                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${activeTab === 'decrypt' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                  className={`flex-1 py-3 px-6 text-center font-medium transition-all rounded-xl ${
+                    activeTab === 'decrypt'
+                      ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-white shadow-md'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  }`}
                 >
                   <FaLock className="inline mr-2" />
-                  Decrypt
-                </button>
+                  <span className="font-medium">Decrypt</span>
+                </motion.button>
               </div>
               
               <div className="p-6">
@@ -328,20 +377,29 @@ function App() {
                   keyStrength={calculateKeyStrength(key)}
                 />
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* History Panel */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden h-full">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden h-full border border-gray-200/50 dark:border-gray-700/50 transition-all hover:shadow-2xl hover:-translate-y-0.5"
+            >
+              <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">Recent Activity</h2>
-                  <FaHistory className="text-blue-500" />
+                  <h2 className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
+                    Recent Activity
+                  </h2>
+                  <div className="p-2 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300">
+                    <FaHistory className="w-5 h-5" />
+                  </div>
                 </div>
               </div>
               
-              <div className="p-4 overflow-y-auto max-h-[500px]">
+              <div className="p-4 overflow-y-auto max-h-[500px] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
                 {history.length > 0 ? (
                   <div className="space-y-3">
                     {history.map((item, index) => (
@@ -349,7 +407,7 @@ function App() {
                         key={index}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                        className="group p-4 bg-white/50 dark:bg-gray-700/30 rounded-xl hover:bg-white dark:hover:bg-gray-700/50 transition-all cursor-pointer border border-gray-100 dark:border-gray-700/50 hover:border-indigo-100 dark:hover:border-indigo-900/50"
                         onClick={() => {
                           if (item.mode === 'encrypt') {
                             setInputText(outputText);
@@ -370,14 +428,14 @@ function App() {
                               ) : (
                                 <FaLock className="inline mr-2 text-blue-500" />
                               )}
-                              {item.algorithm}
+                              <span className="text-gray-900 dark:text-white">{item.algorithm}</span>
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                               {new Date(item.timestamp).toLocaleString()}
                             </div>
                           </div>
-                          <div className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full">
-                            {item.processingTime.toFixed(2)}ms
+                          <div className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                            {parseFloat(item.processingTime).toFixed(2)}ms
                           </div>
                         </div>
                       </motion.div>
@@ -390,13 +448,28 @@ function App() {
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           </div>
         </main>
 
         {/* Footer */}
-        <footer className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>© {new Date().getFullYear()} SecureCrypt. All rights reserved.</p>
+        <footer className="mt-12 text-center">
+          <div className="flex flex-col items-center space-y-2">
+            <div className="flex space-x-4 mb-2">
+              <a href="https://github.com/yourusername" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                <FaGithub className="w-5 h-5" />
+              </a>
+              <a href="https://twitter.com/yourusername" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
+                <FaTwitter className="w-5 h-5" />
+              </a>
+              <a href="https://linkedin.com/in/yourusername" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-500 transition-colors">
+                <FaLinkedin className="w-5 h-5" />
+              </a>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              © {new Date().getFullYear()} SecureCrypt. All rights reserved.
+            </p>
+          </div>
         </footer>
       </div>
 
