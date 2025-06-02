@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaCopy, FaLock, FaKey, FaShieldAlt, FaArrowRight, FaLockOpen, FaInfoCircle, FaRandom } from 'react-icons/fa';
+import { FaCopy, FaLock, FaKey, FaShieldAlt, FaArrowRight, FaLockOpen, FaInfoCircle, FaRandom, FaLink, FaDatabase } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generate } from 'generate-password-browser';
 import { toast } from 'react-hot-toast';
@@ -88,31 +88,41 @@ const EncryptionForm = ({
       value: 'compress', 
       label: mode === 'encrypt' ? 'Compress' : 'Decompress',
       description: 'Standard compression/decompression',
-      icon: '🔒'
+      icon: <FaRandom className="text-indigo-400" />,
+      color: 'from-indigo-500 to-blue-500',
+      badge: 'Standard'
     },
     { 
       value: 'compressToUTF16', 
       label: mode === 'encrypt' ? 'UTF-16' : 'From UTF-16',
       description: 'UTF-16 string encoding',
-      icon: '🔡'
+      icon: <FaShieldAlt className="text-emerald-400" />,
+      color: 'from-emerald-500 to-teal-500',
+      badge: 'Unicode'
     },
     { 
       value: 'compressToBase64', 
       label: mode === 'encrypt' ? 'To Base64' : 'From Base64',
       description: 'Base64 encoded output/input',
-      icon: '🔣'
+      icon: <FaKey className="text-yellow-400" />,
+      color: 'from-yellow-500 to-amber-500',
+      badge: 'Base64'
     },
     { 
       value: 'compressToEncodedURIComponent', 
       label: mode === 'encrypt' ? 'To URI' : 'From URI',
       description: 'URL-safe encoding',
-      icon: '🔗'
+      icon: <FaLink className="text-blue-400" />,
+      color: 'from-blue-500 to-cyan-500',
+      badge: 'URL'
     },
     { 
       value: 'compressToUint8Array', 
       label: mode === 'encrypt' ? 'To Binary' : 'From Binary',
       description: 'Binary data format',
-      icon: '💾'
+      icon: <FaDatabase className="text-purple-400" />,
+      color: 'from-purple-500 to-fuchsia-500',
+      badge: 'Binary'
     },
   ];
   
@@ -160,6 +170,23 @@ const EncryptionForm = ({
   const [isLzOpen, setIsLzOpen] = useState(false);
   const selectedAlgo = algorithms.find(a => a.value === algorithm);
   const selectedLz = lzStringMethods.find(m => m.value === lzMethod) || lzStringMethods[0];
+  
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isLzOpen && !event.target.closest('.lz-method-selector')) {
+        setIsLzOpen(false);
+      }
+      if (isAlgoOpen && !event.target.closest('.algo-selector')) {
+        setIsAlgoOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isLzOpen, isAlgoOpen]);
 
   return (
     <div className="space-y-6">
@@ -236,29 +263,73 @@ const EncryptionForm = ({
 
       {/* LZ-String Method Selection */}
       {algorithm === 'lzstring' && (
-        <div className="space-y-2">
-          <label htmlFor="lzMethod" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            LZ-String Method
-          </label>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Compression Method
+            </label>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+              {lzStringMethods.find(m => m.value === lzMethod)?.badge || 'Standard'}
+            </span>
+          </div>
+          
           <div className="relative">
-            <select
-              id="lzMethod"
-              value={lzMethod || 'compress'}
-              onChange={(e) => setLzMethod(e.target.value)}
+            <button
+              type="button"
+              onClick={() => setIsLzOpen(!isLzOpen)}
               disabled={isProcessing}
-              className="block w-full pl-3 pr-10 py-2.5 text-base border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700/50 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+              className={`relative w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-3 pl-4 pr-10 text-left shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 ${isProcessing ? 'opacity-70 cursor-not-allowed' : 'hover:border-gray-300 dark:hover:border-gray-600'}`}
             >
-              {lzStringMethods.map((method) => (
-                <option key={method.value} value={method.value}>
-                  {method.label}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </div>
+              <div className="flex items-center">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 ${selectedLz?.color?.replace('from-', 'bg-gradient-to-r ')}`}>
+                  {selectedLz?.icon}
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-gray-900 dark:text-white">{selectedLz?.label}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{selectedLz?.description}</div>
+                </div>
+              </div>
+              <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <svg className={`h-5 w-5 text-gray-400 transition-transform ${isLzOpen ? 'transform rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </span>
+            </button>
+
+            <AnimatePresence>
+              {isLzOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+                >
+                  <div className="max-h-60 overflow-y-auto py-1">
+                    {lzStringMethods.map((method) => (
+                      <div
+                        key={method.value}
+                        className={`px-4 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${lzMethod === method.value ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
+                        onClick={() => {
+                          setLzMethod(method.value);
+                          setIsLzOpen(false);
+                        }}
+                      >
+                        <div className="flex items-center">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center mr-3 ${method.color?.replace('from-', 'bg-gradient-to-r ')}`}>
+                            {method.icon}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-white">{method.label}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{method.description}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
           
           {/* JSON Toggle */}
