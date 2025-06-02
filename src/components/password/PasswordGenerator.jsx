@@ -88,163 +88,224 @@ const PasswordGenerator = ({ show, onClose, onPasswordSelect }) => {
     <>
       {show && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300 p-4"
           onClick={handleBackdropClick}
           role="dialog"
           aria-labelledby="password-generator-title"
           aria-modal="true"
         >
           <div
-            className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 transform transition-all duration-300 scale-100"
+            className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-300 transform"
           >
             {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 id="password-generator-title" className="text-2xl font-bold text-gray-900">
-                Generate Secure Password
-              </h2>
-              <button
-                onClick={handleClose}
-                className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                aria-label="Close modal"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+            <div className="px-6 pt-6 pb-2">
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <h2 id="password-generator-title" className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    Password Generator
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Create a strong, secure password
+                  </p>
+                </div>
+                <button
+                  onClick={handleClose}
+                  className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                  aria-label="Close modal"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Body */}
-            <div className="space-y-6">
+            <div className="px-6 pb-6 space-y-6">
+              {/* Generated Password Display */}
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">GENERATED PASSWORD</span>
+                    {strength && (
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${strength.color}/10 text-${strength.color.replace('bg-', '')} border border-${strength.color.replace('bg-', '')}/20`}>
+                        {strength.text}
+                      </span>
+                    )}
+                  </div>
+                  {generatedPassword && (
+                    <button
+                      onClick={handleCopy}
+                      className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium flex items-center"
+                      aria-label={copied ? 'Copied!' : 'Copy to clipboard'}
+                    >
+                      {copied ? (
+                        <>
+                          <svg className="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                          </svg>
+                          Copy
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={generatedPassword || 'Click Generate'}
+                    readOnly
+                    className="w-full bg-transparent border-0 text-xl font-mono font-bold text-gray-900 dark:text-white placeholder-gray-400 focus:ring-0 p-0"
+                    aria-label="Generated password"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                </div>
+              </div>
+
               {/* Password Length Slider */}
-              <div>
-                <label className="block text-sm font-medium text-gray-800 mb-2">
-                  Password Length: <span className="font-semibold">{passwordLength}</span>
-                </label>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Password Length
+                  </label>
+                  <span className="text-sm font-mono font-bold bg-gray-100 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 px-2.5 py-0.5 rounded">
+                    {passwordLength}
+                  </span>
+                </div>
                 <input
                   type="range"
                   min={8}
                   max={50}
                   value={passwordLength}
                   onChange={(e) => setPasswordLength(parseInt(e.target.value, 10))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   aria-label={`Password length: ${passwordLength}`}
                 />
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
+                  <span>8</span>
+                  <span>50</span>
+                </div>
               </div>
 
               {/* Checkbox Options */}
               <div className="space-y-3">
-                <label className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={includeSymbols}
-                    onChange={(e) => setIncludeSymbols(e.target.checked)}
-                    className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    aria-checked={includeSymbols}
-                  />
-                  <span className="text-gray-800">Include Symbols (!@#$%^&*)</span>
-                </label>
-                <label className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={includeNumbers}
-                    onChange={(e) => setIncludeNumbers(e.target.checked)}
-                    className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    aria-checked={includeNumbers}
-                  />
-                  <span className="text-gray-800">Include Numbers (0-9)</span>
-                </label>
-                <label className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={includeLowercase}
-                    onChange={(e) => setIncludeLowercase(e.target.checked)}
-                    className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    aria-checked={includeLowercase}
-                  />
-                  <span className="text-gray-800">Include Lowercase (a-z)</span>
-                </label>
-                <label className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={includeUppercase}
-                    onChange={(e) => setIncludeUppercase(e.target.checked)}
-                    className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    aria-checked={includeUppercase}
-                  />
-                  <span className="text-gray-800">Include Uppercase (A-Z)</span>
-                </label>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Character Types</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className={`flex items-center p-3 rounded-lg transition-all duration-200 ${includeUppercase ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'}`}>
+                    <div className="flex items-center h-5">
+                      <input
+                        type="checkbox"
+                        checked={includeUppercase}
+                        onChange={(e) => setIncludeUppercase(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                        aria-checked={includeUppercase}
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <span className="font-medium text-gray-900 dark:text-white">Uppercase</span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">A B C D E F G</p>
+                    </div>
+                  </label>
+
+                  <label className={`flex items-center p-3 rounded-lg transition-all duration-200 ${includeLowercase ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'}`}>
+                    <div className="flex items-center h-5">
+                      <input
+                        type="checkbox"
+                        checked={includeLowercase}
+                        onChange={(e) => setIncludeLowercase(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                        aria-checked={includeLowercase}
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <span className="font-medium text-gray-900 dark:text-white">Lowercase</span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">a b c d e f g</p>
+                    </div>
+                  </label>
+
+                  <label className={`flex items-center p-3 rounded-lg transition-all duration-200 ${includeNumbers ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'}`}>
+                    <div className="flex items-center h-5">
+                      <input
+                        type="checkbox"
+                        checked={includeNumbers}
+                        onChange={(e) => setIncludeNumbers(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                        aria-checked={includeNumbers}
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <span className="font-medium text-gray-900 dark:text-white">Numbers</span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">0 1 2 3 4 5 6</p>
+                    </div>
+                  </label>
+
+                  <label className={`flex items-center p-3 rounded-lg transition-all duration-200 ${includeSymbols ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'}`}>
+                    <div className="flex items-center h-5">
+                      <input
+                        type="checkbox"
+                        checked={includeSymbols}
+                        onChange={(e) => setIncludeSymbols(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                        aria-checked={includeSymbols}
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <span className="font-medium text-gray-900 dark:text-white">Symbols</span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">! @ # $ % ^ & *</p>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               {/* Error Message */}
               {error && (
-                <div className="text-red-600 text-sm bg-red-100 p-2 rounded-lg">
-                  {error}
+                <div className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 p-3 rounded-lg border border-red-200 dark:border-red-800 flex items-start">
+                  <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{error}</span>
                 </div>
               )}
 
-              {/* Generated Password Display */}
-              {generatedPassword && (
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-800">
-                      Generated Password
-                    </label>
-                    {strength && (
-                      <span className={`text-sm font-semibold text-white px-2 py-1 rounded ${strength.color}`}>
-                        {strength.text}
-                      </span>
-                    )}
-                  </div>
-                  <div className="relative flex items-center space-x-2">
-                    <input
-                      type="text"
-                      value={generatedPassword}
-                      readOnly
-                      className="flex-1 p-2 bg-gray-100/80 border border-gray-300 rounded-lg text-gray-900 focus:outline-none"
-                      aria-label="Generated password"
-                    />
-                    <div className="relative">
-                      <button
-                        onClick={handleCopy}
-                        disabled={!generatedPassword}
-                        className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        aria-label="Copy password to clipboard"
-                      >
-                        {copied ? 'Copied!' : 'Copy'}
-                      </button>
-                      {copied && (
-                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2">
-                          Copied to clipboard
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={handleClose}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 active:scale-95 transition-all duration-200"
-              >
-                Close
-              </button>
-              <button
-                onClick={handleGenerate}
-                disabled={!includeSymbols && !includeNumbers && !includeLowercase && !includeUppercase}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:scale-95 transition-all duration-200"
-              >
-                {generatedPassword ? 'Regenerate' : 'Generate'}
-              </button>
-              <button
-                onClick={handleUsePassword}
-                disabled={!generatedPassword}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed active:scale-95 transition-all duration-200"
-              >
-                Use This Password
-              </button>
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <button
+                  onClick={handleGenerate}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-indigo-500/20 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 hover:-translate-y-0.5"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Generate Password</span>
+                </button>
+                
+                {generatedPassword && (
+                  <button
+                    onClick={handleUsePassword}
+                    className="flex-1 flex items-center justify-center gap-2 bg-white dark:bg-gray-800 border-2 border-indigo-200 dark:border-indigo-900 text-indigo-700 dark:text-indigo-300 px-6 py-3 rounded-xl font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-300 dark:hover:border-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 hover:-translate-y-0.5"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Use This Password</span>
+                  </button>
+                )}
+              </div>
+              
+              {/* Footer Note */}
+              <div className="pt-2 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Passwords are generated securely in your browser and never sent to any server.
+                </p>
+              </div>
             </div>
           </div>
         </div>
