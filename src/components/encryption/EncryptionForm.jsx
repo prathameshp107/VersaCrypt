@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaCopy, FaLock, FaKey, FaShieldAlt, FaArrowRight, FaLockOpen, FaInfoCircle, FaRandom, FaLink, FaDatabase } from 'react-icons/fa';
+import { GiRabbit, GiRabbitHead } from 'react-icons/gi';
+import { RiLockPasswordLine, RiLockUnlockLine } from 'react-icons/ri';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generate } from 'generate-password-browser';
 import { toast } from 'react-hot-toast';
@@ -28,58 +30,72 @@ const EncryptionForm = ({
   { 
     value: 'aes', 
     label: 'AES-256', 
-    icon: <FaShieldAlt className="text-indigo-500" />,
+    icon: <RiLockPasswordLine className="text-indigo-500 text-xl" />,
     description: 'Industry standard symmetric encryption',
     strength: 'Strong',
-    color: 'from-indigo-500 to-purple-500'
+    color: 'from-indigo-500 to-purple-500',
+    badge: 'Secure',
+    iconBg: 'bg-indigo-500/10 dark:bg-indigo-500/20'
   },
   { 
     value: 'des', 
     label: 'DES', 
-    icon: <FaShieldAlt className="text-blue-500" />,
+    icon: <RiLockPasswordLine className="text-blue-500 text-xl" />,
     description: 'Legacy symmetric encryption',
     strength: 'Weak',
-    color: 'from-blue-500 to-cyan-500'
+    color: 'from-blue-500 to-cyan-500',
+    badge: 'Legacy',
+    iconBg: 'bg-blue-500/10 dark:bg-blue-500/20'
   },
   { 
     value: 'base64', 
     label: 'Base64', 
-    icon: <FaShieldAlt className="text-green-500" />,
+    icon: <RiLockPasswordLine className="text-green-500 text-xl" />,
     description: 'Encoding, not encryption',
     strength: 'None',
-    color: 'from-green-500 to-emerald-500'
+    color: 'from-green-500 to-emerald-500',
+    badge: 'Encoding',
+    iconBg: 'bg-green-500/10 dark:bg-green-500/20'
   },
   { 
     value: 'xor', 
     label: 'XOR', 
-    icon: <FaShieldAlt className="text-yellow-500" />,
+    icon: <RiLockPasswordLine className="text-yellow-500 text-xl" />,
     description: 'Basic bitwise operation',
     strength: 'Very Weak',
-    color: 'from-yellow-500 to-amber-500'
+    color: 'from-yellow-500 to-amber-500',
+    badge: 'Basic',
+    iconBg: 'bg-yellow-500/10 dark:bg-yellow-500/20'
   },
   { 
     value: 'rc4', 
     label: 'RC4', 
-    icon: <FaShieldAlt className="text-red-500" />,
+    icon: <RiLockUnlockLine className="text-red-500 text-xl" />,
     description: 'Stream cipher with known vulnerabilities',
     strength: 'Weak',
-    color: 'from-red-500 to-pink-500'
+    color: 'from-red-500 to-pink-500',
+    badge: 'Insecure',
+    iconBg: 'bg-red-500/10 dark:bg-red-500/20'
   },
   { 
     value: 'rabbit', 
     label: 'Rabbit', 
-    icon: <FaShieldAlt className="text-purple-500" />,
+    icon: <GiRabbit className="text-purple-500 text-xl" />,
     description: 'High-speed stream cipher',
     strength: 'Strong',
-    color: 'from-purple-500 to-fuchsia-500'
+    color: 'from-purple-500 to-fuchsia-500',
+    badge: 'Fast',
+    iconBg: 'bg-purple-500/10 dark:bg-purple-500/20'
   },
   { 
     value: 'lzstring', 
     label: 'LZ-String', 
-    icon: <FaShieldAlt className="text-pink-500" />,
+    icon: <GiRabbitHead className="text-pink-500 text-xl" />,
     description: 'Compression, not encryption',
     strength: 'None',
-    color: 'from-pink-500 to-rose-500'
+    color: 'from-pink-500 to-rose-500',
+    badge: 'Compression',
+    iconBg: 'bg-pink-500/10 dark:bg-pink-500/20'
   },
 ];
 
@@ -192,14 +208,19 @@ const EncryptionForm = ({
     <div className="space-y-6">
       {/* Algorithm Selection */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Encryption Algorithm
-          </label>
-          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${selectedAlgo?.color?.replace('from-', 'bg-').split(' ')[0]}/10 text-${selectedAlgo?.color?.split('-')[1]}-600 dark:text-${selectedAlgo?.color?.split('-')[1]}-300`}>
-            {selectedAlgo?.strength}
-          </span>
-        </div>
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Encryption Algorithm
+            </label>
+            <div className="flex items-center space-x-2">
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${selectedAlgo?.color?.replace('from-', 'bg-').split(' ')[0]}/20 text-${selectedAlgo?.color?.split('-')[1]}-800 dark:text-${selectedAlgo?.color?.split('-')[1]}-200 border border-${selectedAlgo?.color?.split('-')[1]}-300/30 dark:border-${selectedAlgo?.color?.split('-')[1]}-500/30`}>
+                {selectedAlgo?.strength}
+              </span>
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700">
+                {selectedAlgo?.badge}
+              </span>
+            </div>
+          </div>
         
         <div className="relative">
           <button
@@ -237,19 +258,30 @@ const EncryptionForm = ({
                   {algorithms.map((algo) => (
                     <div
                       key={algo.value}
-                      className={`px-4 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${algorithm === algo.value ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
+                      className={`px-4 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                        algorithm === algo.value ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                      }`}
                       onClick={() => {
                         setAlgorithm(algo.value);
                         setIsAlgoOpen(false);
                       }}
                     >
                       <div className="flex items-center">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center mr-3 ${algo.color.replace('from-', 'bg-gradient-to-r ')}`}>
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center mr-3 ${algo.iconBg}`}>
                           {algo.icon}
                         </div>
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-white">{algo.label}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{algo.description}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-gray-900 dark:text-white truncate">
+                              {algo.label}
+                            </span>
+                            <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${algo.color.replace('from-', 'bg-').split(' ')[0]}/10 text-${algo.color.split('-')[1]}-800 dark:text-${algo.color.split('-')[1]}-200`}>
+                              {algo.badge}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {algo.description}
+                          </div>
                         </div>
                       </div>
                     </div>
