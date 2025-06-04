@@ -39,7 +39,33 @@ const FileEncryptionForm = ({
     const url = URL.createObjectURL(processedFile);
     const a = document.createElement('a');
     a.href = url;
-    a.download = processedFile.name || `${mode === 'encrypt' ? 'encrypted' : 'decrypted'}_file${processedFile.extension || ''}`;
+    
+    let downloadName = processedFile.name || '';
+    const originalName = selectedFile?.name || '';
+    const originalExt = originalName.split('.').pop();
+    
+    if (mode === 'encrypt') {
+      // For encryption: add .enc before the original extension
+      if (originalName) {
+        const baseName = originalName.includes('.') 
+          ? originalName.substring(0, originalName.lastIndexOf('.')) 
+          : originalName;
+        downloadName = `${baseName}.enc${originalName.includes('.') ? '.' + originalExt : ''}`;
+      } else {
+        downloadName = 'encrypted_file';
+      }
+    } else {
+      // For decryption: remove .enc and restore original extension
+      if (originalName.endsWith('.enc')) {
+        downloadName = originalName.slice(0, -4);
+      } else if (originalName.includes('.enc.')) {
+        downloadName = originalName.replace('.enc', '');
+      } else if (!downloadName) {
+        downloadName = 'decrypted_file';
+      }
+    }
+    
+    a.download = downloadName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
