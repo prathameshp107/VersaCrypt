@@ -54,6 +54,38 @@ const FileEncryptionForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Mode Selection Buttons */}
+      <div className="flex p-1 mb-4 bg-gray-100 dark:bg-gray-700/50 rounded-xl">
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setMode('encrypt')}
+          className={`flex-1 py-2.5 px-4 text-center font-medium transition-all rounded-lg ${
+            mode === 'encrypt'
+              ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-white shadow-sm'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+          }`}
+        >
+          <FaLockOpen className="inline mr-2" />
+          Encrypt File
+        </motion.button>
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setMode('decrypt')}
+          className={`flex-1 py-2.5 px-4 text-center font-medium transition-all rounded-lg ${
+            mode === 'decrypt'
+              ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-white shadow-sm'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+          }`}
+        >
+          <FaLock className="inline mr-2" />
+          Decrypt File
+        </motion.button>
+      </div>
+
       <div className="space-y-4">
         {/* File Upload */}
         <div className="space-y-2">
