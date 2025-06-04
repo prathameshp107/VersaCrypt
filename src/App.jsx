@@ -203,56 +203,77 @@ function App() {
         reader.readAsArrayBuffer(file);
       });
       
-      // Convert ArrayBuffer to WordArray for CryptoJS
-      const wordArray = CryptoJS.lib.WordArray.create(fileBuffer);
+      // Convert ArrayBuffer to base64 for encryption
+      const base64Data = arrayBufferToBase64(fileBuffer);
       
       // Process the encryption/decryption
       let result;
-      let fileExtension = '';
-      let fileName = '';
+      let fileName = file.name;
       
       if (mode === 'encrypt') {
-        // Store the original file extension for later recovery
-        const fileNameParts = file.name.split('.');
-        fileExtension = fileNameParts.length > 1 ? `.${fileNameParts.pop()}` : '';
-        fileName = fileNameParts.join('.');
-        
-        // Encrypt the file
-        result = await processEncryption(
-          wordArray, 
+        // Encrypt the base64 data
+        const encryptedData = await processEncryption(
+          base64Data, 
           mode, 
           algorithm, 
           key || 'default-key'
         );
+        
+        // Convert the encrypted string back to a Uint8Array
+        const encryptedBytes = base64ToArrayBuffer(encryptedData);
         
         // Create a new Blob with the encrypted data
-        const encryptedBlob = new Blob([result], { type: 'application/octet-stream' });
-        encryptedBlob.name = `${fileName}.encrypted`;
-        encryptedBlob.extension = '.encrypted';
+        const encryptedBlob = new Blob([encryptedBytes], { type: 'application/octet-stream' });
+        encryptedBlob.name = `${fileName}.enc`;
         
-        result = encryptedBlob;
+        return encryptedBlob;
       } else {
-        // For decryption, we assume the file is an encrypted file
-        // Decrypt the file
-        result = await processEncryption(
-          wordArray, 
+        // For decryption
+        // Decrypt the base64 data
+        const decryptedBase64 = await processEncryption(
+          base64Data, 
           mode, 
           algorithm, 
           key || 'default-key'
         );
         
-        // Try to extract the original file extension from the filename
-        if (file.name.endsWith('.encrypted')) {
-          fileName = file.name.replace('.encrypted', '');
-        } else {
-          fileName = `decrypted_${file.name}`;
-        }
+        // Convert the decrypted base64 back to a Uint8Array
+        const decryptedBytes = base64ToArrayBuffer(decryptedBase64);
         
         // Create a new Blob with the decrypted data
-        const decryptedBlob = new Blob([result], { type: 'application/octet-stream' });
-        decryptedBlob.name = fileName;
+        const decryptedBlob = new Blob(
+          [decryptedBytes], 
+          { type: 'application/octet-stream' }
+        );
         
-        result = decryptedBlob;
+        // Set the original filename by removing the .enc extension
+        if (fileName.endsWith('.enc')) {
+          fileName = fileName.slice(0, -4);
+        }
+        
+        decryptedBlob.name = fileName;
+        return decryptedBlob;
+      }
+      
+      // Helper function to convert ArrayBuffer to base64
+      function arrayBufferToBase64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+      }
+      
+      // Helper function to convert base64 to ArrayBuffer
+      function base64ToArrayBuffer(base64) {
+        const binaryString = atob(base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes.buffer;
       }
       
       // Update history
