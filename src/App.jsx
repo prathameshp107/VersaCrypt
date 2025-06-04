@@ -14,10 +14,12 @@ import {
   FaLinkedin,
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import CryptoJS from 'crypto-js';
 
 // Components
 import EncryptionForm from './components/encryption/EncryptionForm';
 import PasswordGenerator from './components/password/PasswordGenerator';
+import FileEncryptionForm from './components/file/FileEncryptionForm';
 
 // Hooks
 import useEncryption from './hooks/useEncryption';
@@ -47,6 +49,7 @@ function App() {
   const [history, setHistory] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('encrypt');
+  const [isFileMode, setIsFileMode] = useState(false);
 
   // Custom hooks
   const {
@@ -176,6 +179,111 @@ function App() {
     }
   }, [inputText, mode, algorithm, key, processEncryption, showToastMessage]);
 
+  // Handle file processing
+  const handleFileProcess = useCallback(async (file, mode, algorithm, key) => {
+    if (!file) {
+      showToastMessage('Please select a file to process');
+      return null;
+    }
+    
+    if (mode === 'encrypt' && !key) {
+      showToastMessage('Please enter an encryption key');
+      return null;
+    }
+    
+    setIsProcessing(true);
+    const startTime = performance.now();
+    
+    try {
+      // Read the file as an ArrayBuffer
+      const fileBuffer = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+      
+      // Convert ArrayBuffer to WordArray for CryptoJS
+      const wordArray = CryptoJS.lib.WordArray.create(fileBuffer);
+      
+      // Process the encryption/decryption
+      let result;
+      let fileExtension = '';
+      let fileName = '';
+      
+      if (mode === 'encrypt') {
+        // Store the original file extension for later recovery
+        const fileNameParts = file.name.split('.');
+        fileExtension = fileNameParts.length > 1 ? `.${fileNameParts.pop()}` : '';
+        fileName = fileNameParts.join('.');
+        
+        // Encrypt the file
+        result = await processEncryption(
+          wordArray, 
+          mode, 
+          algorithm, 
+          key || 'default-key'
+        );
+        
+        // Create a new Blob with the encrypted data
+        const encryptedBlob = new Blob([result], { type: 'application/octet-stream' });
+        encryptedBlob.name = `${fileName}.encrypted`;
+        encryptedBlob.extension = '.encrypted';
+        
+        result = encryptedBlob;
+      } else {
+        // For decryption, we assume the file is an encrypted file
+        // Decrypt the file
+        result = await processEncryption(
+          wordArray, 
+          mode, 
+          algorithm, 
+          key || 'default-key'
+        );
+        
+        // Try to extract the original file extension from the filename
+        if (file.name.endsWith('.encrypted')) {
+          fileName = file.name.replace('.encrypted', '');
+        } else {
+          fileName = `decrypted_${file.name}`;
+        }
+        
+        // Create a new Blob with the decrypted data
+        const decryptedBlob = new Blob([result], { type: 'application/octet-stream' });
+        decryptedBlob.name = fileName;
+        
+        result = decryptedBlob;
+      }
+      
+      // Update history
+      const endTime = performance.now();
+      const processTime = endTime - startTime;
+      setProcessingTime(processTime);
+      
+      // Add to history
+      setHistory(prev => [
+        {
+          mode,
+          algorithm,
+          timestamp: new Date().toISOString(),
+          processingTime: processTime,
+          fileName: file.name
+        },
+        ...prev.slice(0, 4)
+      ]);
+      
+      showToastMessage(`File ${mode === 'encrypt' ? 'encryption' : 'decryption'} successful!`);
+      return result;
+    } catch (error) {
+      console.error('File processing error:', error);
+      const errorMessage = error.message || 'An error occurred during file processing';
+      showToastMessage(`Error: ${errorMessage}`);
+      return null;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [processEncryption, showToastMessage]);
+
   // Handle copy to clipboard
   const handleCopy = useCallback(() => {
     if (!outputText) return;
@@ -268,6 +376,7 @@ function App() {
                     onClick={() => {
                       setMode('encrypt');
                       setActiveTab('encrypt');
+                      setIsFileMode(false);
                       setMobileMenuOpen(false);
                     }}
                     className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl transition-all ${
@@ -285,6 +394,7 @@ function App() {
                     onClick={() => {
                       setMode('decrypt');
                       setActiveTab('decrypt');
+                      setIsFileMode(false);
                       setMobileMenuOpen(false);
                     }}
                     className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl transition-all ${
@@ -297,6 +407,23 @@ function App() {
                     <span className="font-medium">Decrypt</span>
                   </motion.button>
                 </div>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setActiveTab('file');
+                    setIsFileMode(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-center py-3 px-4 rounded-xl transition-all ${
+                    activeTab === 'file'
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                      : 'bg-white dark:bg-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                  }`}
+                >
+                  <FaExchangeAlt className="mr-2" />
+                  <span className="font-medium">File Encryption</span>
+                </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
@@ -331,6 +458,7 @@ function App() {
                   onClick={() => {
                     setMode('encrypt');
                     setActiveTab('encrypt');
+                    setIsFileMode(false);
                   }}
                   className={`flex-1 py-3 px-6 text-center font-medium transition-all rounded-xl ${
                     activeTab === 'encrypt'
@@ -347,6 +475,7 @@ function App() {
                   onClick={() => {
                     setMode('decrypt');
                     setActiveTab('decrypt');
+                    setIsFileMode(false);
                   }}
                   className={`flex-1 py-3 px-6 text-center font-medium transition-all rounded-xl ${
                     activeTab === 'decrypt'
@@ -357,25 +486,55 @@ function App() {
                   <FaLock className="inline mr-2" />
                   <span className="font-medium">Decrypt</span>
                 </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setActiveTab('file');
+                    setIsFileMode(true);
+                  }}
+                  className={`flex-1 py-3 px-6 text-center font-medium transition-all rounded-xl ${
+                    activeTab === 'file'
+                      ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-white shadow-md'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <FaExchangeAlt className="inline mr-2" />
+                  <span className="font-medium">File</span>
+                </motion.button>
               </div>
               
               <div className="p-6">
-                <EncryptionForm
-                  inputText={inputText}
-                  setInputText={setInputText}
-                  outputText={outputText}
-                  mode={mode}
-                  setMode={setMode}
-                  algorithm={algorithm}
-                  setAlgorithm={setAlgorithm}
-                  encryptionKey={key}
-                  setKey={setKey}
-                  handleProcess={handleProcess}
-                  handleCopy={handleCopy}
-                  copied={copied}
-                  isProcessing={isProcessing}
-                  keyStrength={calculateKeyStrength(key)}
-                />
+                {isFileMode ? (
+                  <FileEncryptionForm
+                    mode={mode}
+                    setMode={setMode}
+                    algorithm={algorithm}
+                    setAlgorithm={setAlgorithm}
+                    encryptionKey={key}
+                    setKey={setKey}
+                    handleFileProcess={handleFileProcess}
+                    isProcessing={isProcessing}
+                    keyStrength={calculateKeyStrength(key)}
+                  />
+                ) : (
+                  <EncryptionForm
+                    inputText={inputText}
+                    setInputText={setInputText}
+                    outputText={outputText}
+                    mode={mode}
+                    setMode={setMode}
+                    algorithm={algorithm}
+                    setAlgorithm={setAlgorithm}
+                    encryptionKey={key}
+                    setKey={setKey}
+                    handleProcess={handleProcess}
+                    handleCopy={handleCopy}
+                    copied={copied}
+                    isProcessing={isProcessing}
+                    keyStrength={calculateKeyStrength(key)}
+                  />
+                )}
               </div>
             </motion.div>
           </div>
@@ -527,9 +686,9 @@ function App() {
             <span>{toastMessage}</span>
           </motion.div>
         )}
-      </AnimatePresence>
+         </AnimatePresence>
     </div>
   );
 }
 
-export default App;
+export default App;      
