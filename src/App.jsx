@@ -351,7 +351,7 @@ function App() {
               animate={{ opacity: 1, y: 0 }}
               className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"
             >
-              SecureCrypt
+              VersaCrypt
             </motion.h1>
           </div>
           <div className="flex items-center space-x-3 sm:space-x-4">
@@ -636,18 +636,18 @@ function App() {
         <footer className="mt-12 text-center">
           <div className="flex flex-col items-center space-y-2">
             <div className="flex space-x-4 mb-2">
-              <a href="https://github.com/yourusername" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+              <a href="https://github.com/prathameshp107" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
                 <FaGithub className="w-5 h-5" />
               </a>
-              <a href="https://twitter.com/yourusername" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
+              <a href="https://twitter.com/prathameshp107" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors">
                 <FaTwitter className="w-5 h-5" />
               </a>
-              <a href="https://linkedin.com/in/yourusername" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-500 transition-colors">
+              <a href="https://linkedin.com/in/prathameshp107" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-500 transition-colors">
                 <FaLinkedin className="w-5 h-5" />
               </a>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              © {new Date().getFullYear()} SecureCrypt. All rights reserved.
+              © {new Date().getFullYear()} VersaCrypt. All rights reserved.
             </p>
           </div>
         </footer>
