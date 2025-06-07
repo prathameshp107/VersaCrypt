@@ -39,7 +39,7 @@ const EncryptionPage = ({
   outputText,
   algorithm,
   setAlgorithm,
-  key,
+  encryptionKey,
   setKey,
   handleProcess,
   handleCopy,
@@ -161,11 +161,11 @@ const EncryptionPage = ({
                     setMode={setMode}
                     algorithm={algorithm}
                     setAlgorithm={setAlgorithm}
-                    encryptionKey={key}
+                    encryptionKey={encryptionKey}
                     setKey={setKey}
                     handleFileProcess={handleFileProcess}
                     isProcessing={isProcessing}
-                    keyStrength={calculateKeyStrength(key)}
+                    keyStrength={calculateKeyStrength(encryptionKey)}
                   />
                 ) : (
                   <EncryptionForm
@@ -176,13 +176,13 @@ const EncryptionPage = ({
                     setMode={setMode}
                     algorithm={algorithm}
                     setAlgorithm={setAlgorithm}
-                    encryptionKey={key}
+                    encryptionKey={encryptionKey}
                     setKey={setKey}
                     handleProcess={handleProcess}
                     handleCopy={handleCopy}
                     copied={copied}
                     isProcessing={isProcessing}
-                    keyStrength={calculateKeyStrength(key)}
+                    keyStrength={calculateKeyStrength(encryptionKey)}
                   />
                 )}
               </div>

@@ -205,7 +205,7 @@ const EncryptionForm = ({
   }, [isLzOpen, isAlgoOpen]);
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
       {/* Algorithm Selection */}
       <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -252,37 +252,24 @@ const EncryptionForm = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+                className="absolute z-10 mt-1 w-full rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden focus:outline-none algo-selector"
               >
-                <div className="max-h-60 overflow-y-auto py-1">
+                <div className="py-1">
                   {algorithms.map((algo) => (
                     <div
                       key={algo.value}
-                      className={`px-4 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
-                        algorithm === algo.value ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
-                      }`}
                       onClick={() => {
                         setAlgorithm(algo.value);
                         setIsAlgoOpen(false);
                       }}
+                      className={`flex items-center px-4 py-2 text-sm cursor-pointer transition-colors duration-200 ${algorithm === algo.value ? 'bg-indigo-50 dark:bg-gray-700 text-indigo-600 dark:text-white' : 'text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                     >
-                      <div className="flex items-center">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center mr-3 ${algo.iconBg}`}>
-                          {algo.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-gray-900 dark:text-white truncate">
-                              {algo.label}
-                            </span>
-                            <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${algo.color.replace('from-', 'bg-').split(' ')[0]}/10 text-${algo.color.split('-')[1]}-800 dark:text-${algo.color.split('-')[1]}-200`}>
-                              {algo.badge}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {algo.description}
-                          </div>
-                        </div>
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center mr-3 ${algo.iconBg}`}>
+                        {algo.icon}
+                      </div>
+                      <div>
+                        <div className="font-medium">{algo.label}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{algo.description}</div>
                       </div>
                     </div>
                   ))}
@@ -293,18 +280,12 @@ const EncryptionForm = ({
         </div>
       </div>
 
-      {/* LZ-String Method Selection */}
+      {/* LZ-String Method Selection (only for LZ-String algorithm) */}
       {algorithm === 'lzstring' && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Compression Method
-            </label>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-              {lzStringMethods.find(m => m.value === lzMethod)?.badge || 'Standard'}
-            </span>
-          </div>
-          
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            LZ-String Method
+          </label>
           <div className="relative">
             <button
               type="button"
@@ -335,26 +316,24 @@ const EncryptionForm = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+                  className="absolute z-10 mt-1 w-full rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden focus:outline-none lz-method-selector"
                 >
-                  <div className="max-h-60 overflow-y-auto py-1">
+                  <div className="py-1">
                     {lzStringMethods.map((method) => (
                       <div
                         key={method.value}
-                        className={`px-4 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${lzMethod === method.value ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
                         onClick={() => {
                           setLzMethod(method.value);
                           setIsLzOpen(false);
                         }}
+                        className={`flex items-center px-4 py-2 text-sm cursor-pointer transition-colors duration-200 ${lzMethod === method.value ? 'bg-indigo-50 dark:bg-gray-700 text-indigo-600 dark:text-white' : 'text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                       >
-                        <div className="flex items-center">
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center mr-3 ${method.color?.replace('from-', 'bg-gradient-to-r ')}`}>
-                            {method.icon}
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900 dark:text-white">{method.label}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{method.description}</div>
-                          </div>
+                        <div className={`w-6 h-6 rounded-md flex items-center justify-center mr-3 ${method.color.replace('from-', 'bg-gradient-to-r ')}`}>
+                          {method.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium">{method.label}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{method.description}</div>
                         </div>
                       </div>
                     ))}
@@ -364,32 +343,26 @@ const EncryptionForm = ({
             </AnimatePresence>
           </div>
           
-          {/* JSON Toggle */}
-          <div className="flex items-center mt-2">
-            <button
-              type="button"
-              onClick={() => setUseJson(!useJson)}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${useJson ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'}`}
-              role="switch"
-              aria-checked={useJson}
-            >
-              <span className="sr-only">Use JSON {useJson ? 'parse' : 'stringify'}</span>
-              <span
-                aria-hidden="true"
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  useJson ? 'translate-x-5' : 'translate-x-0'
-                }`}
+          {algorithm === 'lzstring' && (
+            <div className="mt-4 flex items-center">
+              <input
+                type="checkbox"
+                id="use-json"
+                checked={useJson}
+                onChange={(e) => setUseJson(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
               />
-            </button>
-            <span className="ml-3 text-sm">
-              <span className="font-medium text-gray-700 dark:text-gray-300">
-                {useJson ? 'JSON Mode' : 'Text Mode'}
+              <label htmlFor="use-json" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                Process as JSON (for LZ-String)
+              </label>
+              <Tooltip id="json-tooltip" place="right" effect="solid" className="tooltip-content">
+                Supports JSON objects for compression/decompression, maintaining structure.
+              </Tooltip>
+              <span data-tooltip-id="json-tooltip" className="ml-2 text-gray-400 dark:text-gray-500 cursor-help">
+                <FaInfoCircle className="w-4 h-4" />
               </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                {' '}({useJson ? 'Auto ' + (mode === 'encrypt' ? 'stringify' : 'parse') : 'Raw text'})
-              </span>
-            </span>
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -435,6 +408,13 @@ const EncryptionForm = ({
             type={mode === 'encrypt' ? 'text' : 'password'}
             value={encryptionKey}
             onChange={(e) => setKey(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                // Optionally, trigger handleProcess here if hitting enter should process
+                // handleProcess({ method: lzMethod, useJson });
+              }
+            }}
             placeholder={mode === 'encrypt' ? 'Enter or generate an encryption key' : 'Enter the decryption key'}
             disabled={isProcessing}
             autoComplete="off"
@@ -608,7 +588,7 @@ const EncryptionForm = ({
           )}
         </div>
       </div>
-    </div>
+    </form>
   );
 };
 

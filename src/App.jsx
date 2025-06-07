@@ -15,9 +15,8 @@ import {
   FaLinkedin,
 } from 'react-icons/fa';
 import CryptoJS from 'crypto-js';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from 'react-toastify';
 
 // Components
 import Navigation from './components/Navigation';
@@ -53,7 +52,15 @@ function App() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => {
+    try {
+      const storedHistory = localStorage.getItem('encryptionHistory');
+      return storedHistory ? JSON.parse(storedHistory) : [];
+    } catch (error) {
+      console.error("Failed to load history from localStorage", error);
+      return [];
+    }
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('encrypt');
   const [isFileMode, setIsFileMode] = useState(false);
@@ -87,6 +94,15 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Persist history to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('encryptionHistory', JSON.stringify(history));
+    } catch (error) {
+      console.error("Failed to save history to localStorage", error);
+    }
+  }, [history]);
 
   // Show toast message
   const showToastMessage = useCallback((message) => {
@@ -350,7 +366,7 @@ function App() {
                     outputText={outputText}
                     algorithm={algorithm}
                     setAlgorithm={setAlgorithm}
-                key={key}
+                encryptionKey={key}
                     setKey={setKey}
                     handleProcess={handleProcess}
                     handleCopy={handleCopy}
