@@ -57,17 +57,6 @@ const EncryptionPage = ({
         {/* Header */}
         <header className="flex justify-between items-center mb-8 sm:mb-12">
           <div className="flex items-center space-x-3">
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl hover:bg-opacity-20 hover:bg-gray-700 dark:hover:bg-white dark:hover:bg-opacity-10 transition-all duration-300"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? (
-                <FaTimes className="w-6 h-6" />
-              ) : (
-                <FaBars className="w-6 h-6" />
-              )}
-            </button>
             <motion.h1 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}

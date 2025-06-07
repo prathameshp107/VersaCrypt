@@ -15,6 +15,9 @@ import {
   FaLinkedin,
 } from 'react-icons/fa';
 import CryptoJS from 'crypto-js';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Components
 import Navigation from './components/Navigation';
@@ -23,6 +26,7 @@ import PasswordGenerator from './components/password/PasswordGenerator';
 import FileEncryptionForm from './components/file/FileEncryptionForm';
 import Home from './pages/Home';
 import About from './pages/About';
+import Contact from './pages/Contact';
 import EncryptionPage from './pages/EncryptionPage';
 
 // Hooks
@@ -48,7 +52,6 @@ function App() {
   const [showPasswordGenerator, setShowPasswordGenerator] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [processingTime, setProcessingTime] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [history, setHistory] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -60,9 +63,6 @@ function App() {
     processEncryption,
     calculateKeyStrength,
   } = useEncryption();
-
-  // Calculate key strength
-  const keyStrength = calculateKeyStrength(key);
 
   // Toggle dark mode
   const toggleDarkMode = useCallback(() => {
@@ -124,8 +124,8 @@ function App() {
           try {
             const parsed = JSON.parse(processedText);
             processedText = parsed;
-          } catch (e) {
-            console.warn('Failed to parse JSON input, using raw text: ' + e.message);
+          } catch {
+            console.warn('Failed to parse JSON input, using raw text');
           }
         }
       }
@@ -145,9 +145,8 @@ function App() {
         if (mode === 'encrypt' && algorithm === 'lzstring' && options.useJson) {
           try {
             displayResult = JSON.parse(result);
-          } catch (e) {
-            // If parsing fails, use the raw result
-            console.warn('Failed to parse result as JSON, using raw output: ' + e.message);
+          } catch {
+            console.warn('Failed to parse result as JSON, using raw output');
           }
         }
         
@@ -156,7 +155,6 @@ function App() {
         // Update history
         const endTime = performance.now();
         const processTime = endTime - startTime;
-        setProcessingTime(processTime);
         
         // Add to history
         setHistory(prev => [
@@ -229,8 +227,7 @@ function App() {
         // Create a new Blob with the encrypted data
         const encryptedBlob = new Blob([encryptedBytes], { type: 'application/octet-stream' });
         encryptedBlob.name = `${fileName}.enc`;
-        
-        return encryptedBlob;
+        result = encryptedBlob;
       } else {
         // For decryption
         // Decrypt the base64 data
@@ -256,7 +253,7 @@ function App() {
         }
         
         decryptedBlob.name = fileName;
-        return decryptedBlob;
+        result = decryptedBlob;
       }
       
       // Helper function to convert ArrayBuffer to base64
@@ -283,7 +280,6 @@ function App() {
       // Update history
       const endTime = performance.now();
       const processTime = endTime - startTime;
-      setProcessingTime(processTime);
       
       // Add to history
       setHistory(prev => [
@@ -320,94 +316,60 @@ function App() {
     setTimeout(() => {
       setCopied(false);
     }, 2000);
-  }, [outputText]);
-
-  // Toggle password generator
-  const togglePasswordGenerator = () => {
-    setShowPasswordGenerator(!showPasswordGenerator);
-  };
-
-  // Handle password selection from generator
-  const handlePasswordSelect = (password) => {
-    setKey(password);
-    showToastMessage('Password copied to key field!');
-  };
+  }, [outputText, showToastMessage]);
 
   return (
     <Router>
       <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
-        <Navigation />
-        <Routes>
-          <Route path="/" element={
-            <EncryptionPage
-              darkMode={darkMode}
-              toggleDarkMode={toggleDarkMode}
-              mobileMenuOpen={mobileMenuOpen}
-              setMobileMenuOpen={setMobileMenuOpen}
-              mode={mode}
-              setMode={setMode}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              isFileMode={isFileMode}
-              setIsFileMode={setIsFileMode}
-              showPasswordGenerator={showPasswordGenerator}
-              setShowPasswordGenerator={setShowPasswordGenerator}
-              history={history}
-              inputText={inputText}
-              setInputText={setInputText}
-              outputText={outputText}
-              algorithm={algorithm}
-              setAlgorithm={setAlgorithm}
-              key={key}
-              setKey={setKey}
-              handleProcess={handleProcess}
-              handleCopy={handleCopy}
-              copied={copied}
-              isProcessing={isProcessing}
-              calculateKeyStrength={calculateKeyStrength}
-              handleFileProcess={handleFileProcess}
-              showToastMessage={showToastMessage}
-              showToast={showToast}
-              toastMessage={toastMessage}
-            />
-          } />
-          <Route path="/home" element={<Home />} />
-          <Route path="/encrypt" element={
-            <EncryptionPage
-              darkMode={darkMode}
-              toggleDarkMode={toggleDarkMode}
-              mobileMenuOpen={mobileMenuOpen}
-              setMobileMenuOpen={setMobileMenuOpen}
-              mode={mode}
-              setMode={setMode}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              isFileMode={isFileMode}
-              setIsFileMode={setIsFileMode}
-              showPasswordGenerator={showPasswordGenerator}
-              setShowPasswordGenerator={setShowPasswordGenerator}
-              history={history}
-              inputText={inputText}
-              setInputText={setInputText}
-              outputText={outputText}
-              algorithm={algorithm}
-              setAlgorithm={setAlgorithm}
-              key={key}
-              setKey={setKey}
-              handleProcess={handleProcess}
-              handleCopy={handleCopy}
-              copied={copied}
-              isProcessing={isProcessing}
-              calculateKeyStrength={calculateKeyStrength}
-              handleFileProcess={handleFileProcess}
-              showToastMessage={showToastMessage}
-              showToast={showToast}
-              toastMessage={toastMessage}
-            />
-          } />
-          <Route path="/about" element={<About />} />
-        </Routes>
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100 min-h-screen">
+          <Navigation 
+            darkMode={darkMode} 
+            toggleDarkMode={toggleDarkMode}
+            mobileMenuOpen={mobileMenuOpen}
+            setMobileMenuOpen={setMobileMenuOpen}
+          />
+          
+          <main className="pt-16">
+            <Routes>
+              <Route path="/" element={<EncryptionPage 
+                darkMode={darkMode}
+                toggleDarkMode={toggleDarkMode}
+                mobileMenuOpen={mobileMenuOpen}
+                setMobileMenuOpen={setMobileMenuOpen}
+                    mode={mode}
+                    setMode={setMode}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                isFileMode={isFileMode}
+                setIsFileMode={setIsFileMode}
+                showPasswordGenerator={showPasswordGenerator}
+                setShowPasswordGenerator={setShowPasswordGenerator}
+                history={history}
+                    inputText={inputText}
+                    setInputText={setInputText}
+                    outputText={outputText}
+                    algorithm={algorithm}
+                    setAlgorithm={setAlgorithm}
+                key={key}
+                    setKey={setKey}
+                    handleProcess={handleProcess}
+                    handleCopy={handleCopy}
+                    copied={copied}
+                    isProcessing={isProcessing}
+                calculateKeyStrength={calculateKeyStrength}
+                handleFileProcess={handleFileProcess}
+                showToastMessage={showToastMessage}
+                showToast={showToast}
+                toastMessage={toastMessage}
+              />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+            </Routes>
+        </main>
+          </div>
       </div>
+      <ToastContainer position="bottom-right" />
     </Router>
   );
 }
